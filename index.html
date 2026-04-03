@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUARDIAN — ORBIT VIEW</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold:        #c9a96e;
+    --gold-dim:    rgba(201,169,110,0.4);
+    --gold-glow:   rgba(201,169,110,0.15);
+    --gold-bright: #e8c87e;
+    --teal:        #5bc8d8;
+    --teal-dim:    rgba(91,200,216,0.3);
+    --white:       #eef0f5;
+    --grey:        #6a7a96;
+    --dark:        #04070e;
+    --panel:       rgba(3,5,14,0.92);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--dark);
+    color: var(--white);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    cursor: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ── BACKGROUND LAYERS ── */
+  #stars   { position: fixed; inset: 0; z-index: 0; }
+
+  .nebula {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background:
+      radial-gradient(ellipse 65% 45% at 12% 88%, rgba(12,25,70,0.55) 0%, transparent 70%),
+      radial-gradient(ellipse 45% 40% at 78% 12%, rgba(30,12,60,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse 90% 80% at 35% 55%, rgba(3,5,20,0.5) 0%, transparent 80%);
+  }
+
+  .vignette {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(ellipse 100% 90% at 50% 50%, transparent 45%, rgba(0,0,0,0.88) 100%);
+  }
+
+  .scanlines {
+    position: fixed; inset: 0; z-index: 99; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.035) 2px, rgba(0,0,0,0.035) 4px
+    );
+  }
+
+  /* ── PLANET SYSTEM ── */
+  .planet-system {
+    position: fixed;
+    left: 290px; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 520px; height: 520px;
+    z-index: 3;
+    animation: system-fade 2.2s ease 0.2s both;
+  }
+
+  @keyframes system-fade {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .planet-atmos {
+    position: absolute; inset: -16%;
+    border-radius: 50%;
+    transition: box-shadow 1.8s ease;
+    pointer-events: none;
+  }
+
+  .planet {
+    position: absolute; inset: 9%;
+    border-radius: 50%; overflow: hidden;
+    transition: background 1.8s ease;
+  }
+
+  .planet-surface {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    transition: background 1.8s ease;
+  }
+
+  /* Rotating surface detail */
+  .planet-surface::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%; opacity: 0.75;
+    animation: surface-spin 55s linear infinite;
+    transition: background 1.8s ease, opacity 1.8s ease;
+  }
+
+  /* 3D shading */
+  .planet-surface::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 66% 66%,
+      transparent 12%, rgba(0,0,0,0.35) 48%, rgba(0,0,0,0.88) 100%);
+    pointer-events: none;
+  }
+
+  @keyframes surface-spin {
+    from { transform: rotate(0deg) translateX(6%) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(6%) rotate(-360deg); }
+  }
+
+  /* ── Planet Themes ── */
+  .p-earth .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #4db87a, #1b70b4 36%, #0c2e52 78%);
+  }
+  .p-earth .planet-surface::before {
+    background:
+      radial-gradient(ellipse 190% 60% at 15% 70%, rgba(60,180,90,0.68) 0%, transparent 52%),
+      radial-gradient(ellipse 110% 80% at 82% 28%, rgba(30,110,200,0.45) 0%, transparent 44%);
+  }
+  .p-earth .planet-atmos {
+    box-shadow: 0 0 55px rgba(35,130,225,0.65), 0 0 110px rgba(18,80,160,0.38), 0 0 200px rgba(8,45,100,0.22);
+  }
+
+  .p-moon .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #9eaabb, #5e6878 40%, #23272f 78%);
+  }
+  .p-moon .planet-surface::before {
+    background:
+      radial-gradient(circle 14% at 28% 42%, rgba(0,0,0,0.32) 0%, transparent 100%),
+      radial-gradient(circle 9%  at 62% 22%, rgba(0,0,0,0.26) 0%, transparent 100%),
+      radial-gradient(circle 7%  at 74% 68%, rgba(0,0,0,0.2)  0%, transparent 100%),
+      radial-gradient(circle 11% at 45% 72%, rgba(0,0,0,0.22) 0%, transparent 100%);
+  }
+  .p-moon .planet-atmos {
+    box-shadow: 0 0 38px rgba(85,115,155,0.38), 0 0 75px rgba(55,75,105,0.22), 0 0 140px rgba(28,38,58,0.14);
+  }
+
+  .p-venus .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #f2c265, #c26820 40%, #5a2105 78%);
+  }
+  .p-venus .planet-surface::before {
+    background:
+      radial-gradient(ellipse 210% 65% at 50% 50%, rgba(245,205,85,0.62) 0%, transparent 55%),
+      radial-gradient(ellipse 160% 85% at 18% 32%, rgba(205,145,42,0.42) 0%, transparent 50%);
+  }
+  .p-venus .planet-atmos {
+    box-shadow: 0 0 65px rgba(215,145,42,0.65), 0 0 125px rgba(175,105,22,0.42), 0 0 210px rgba(120,60,10,0.26);
+  }
+
+  .p-mars .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #ce4636, #8c2012 40%, #3c0808 78%);
+  }
+  .p-mars .planet-surface::before {
+    background:
+      radial-gradient(ellipse 170% 45% at 50% 85%, rgba(240,200,180,0.3)  0%, transparent 42%),
+      radial-gradient(ellipse 130% 38% at 50% 8%,  rgba(200,175,165,0.24) 0%, transparent 32%),
+      radial-gradient(circle  18%  at 58% 48%,     rgba(180,78,38,0.42)   0%, transparent 100%);
+  }
+  .p-mars .planet-atmos {
+    box-shadow: 0 0 58px rgba(200,68,38,0.58), 0 0 108px rgba(162,40,20,0.36), 0 0 185px rgba(98,18,10,0.22);
+  }
+
+  .p-reef .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #7a52d5, #301aa4 40%, #100828 78%);
+  }
+  .p-reef .planet-surface::before {
+    background:
+      radial-gradient(ellipse 160% 85% at 28% 62%, rgba(105,62,205,0.52) 0%, transparent 56%),
+      radial-gradient(ellipse 105% 65% at 72% 32%, rgba(62,32,165,0.42)  0%, transparent 52%);
+  }
+  .p-reef .planet-atmos {
+    box-shadow: 0 0 65px rgba(90,52,205,0.58), 0 0 125px rgba(62,32,162,0.36), 0 0 205px rgba(28,10,80,0.22);
+  }
+
+  .p-classified .planet-surface {
+    background: radial-gradient(circle at 37% 30%, #221530, #120810 40%, #050306 78%);
+  }
+  .p-classified .planet-surface::before {
+    background: radial-gradient(ellipse 130% 65% at 38% 62%, rgba(48,18,68,0.42) 0%, transparent 56%);
+    opacity: 0.5;
+  }
+  .p-classified .planet-atmos {
+    box-shadow: 0 0 38px rgba(45,18,75,0.38), 0 0 75px rgba(28,8,48,0.22);
+  }
+
+  /* ── Orbit ring ── */
+  .orbit-ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(201,169,110,0.1);
+    box-shadow: 0 0 18px rgba(201,169,110,0.04);
+    pointer-events: none;
+    animation: ring-pulse 5s ease-in-out infinite;
+  }
+
+  @keyframes ring-pulse {
+    0%, 100% { border-color: rgba(201,169,110,0.10); }
+    50%       { border-color: rgba(201,169,110,0.18); }
+  }
+
+  /* ── Orbiting ship ── */
+  .ship-wrapper {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    animation: ship-orbit 28s linear infinite;
+  }
+
+  @keyframes ship-orbit {
+    from { transform: rotate(20deg); }
+    to   { transform: rotate(380deg); }
+  }
+
+  .guardian-ship {
+    position: absolute;
+    left: 265px; top: 0;
+    transform: translate(-50%, -50%) rotate(-88deg);
+    filter: drop-shadow(0 0 4px rgba(201,169,110,0.5));
+    opacity: 0.85;
+  }
+
+  /* ── UI OVERLAY ── */
+  .ui {
+    position: fixed; inset: 0;
+    z-index: 10; pointer-events: none;
+  }
+  .ui > * { pointer-events: auto; }
+
+  /* ── Guardian Panel (top-left) ── */
+  .guardian-panel {
+    position: absolute;
+    top: 34px; left: 34px;
+    width: 240px;
+    padding: 18px 22px 16px;
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    animation: fade-slide-up 0.9s ease 0.5s both;
+  }
+
+  .gp-eyebrow {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px; letter-spacing: 3.5px;
+    color: var(--gold); opacity: 0.75;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+
+  .gp-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 17px; font-weight: 700;
+    letter-spacing: 2.5px; color: var(--white);
+    margin-bottom: 9px;
+  }
+
+  .gp-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 2px;
+    color: var(--grey); text-transform: uppercase;
+  }
+
+  .gp-sep { opacity: 0.35; }
+  .gp-light { color: var(--gold); font-family: 'Orbitron', sans-serif; font-size: 10px; }
+
+  .gp-scan {
+    margin-top: 14px; height: 1px;
+    background: var(--gold-dim); overflow: hidden; position: relative;
+  }
+  .gp-scan::after {
+    content: '';
+    position: absolute; top: 0; left: -60%;
+    width: 55%; height: 100%;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    animation: scan-sweep 2.8s ease-in-out infinite;
+  }
+
+  @keyframes scan-sweep {
+    0%   { left: -60%; }
+    100% { left: 110%; }
+  }
+
+  /* ── ORBIT label (top-right) ── */
+  .orbit-label {
+    position: absolute;
+    top: 34px; right: 38px;
+    text-align: right;
+    animation: fade-slide-up 0.9s ease 0.7s both;
+  }
+
+  .ol-word {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 38px; font-weight: 900;
+    letter-spacing: 10px; color: var(--white);
+    opacity: 0.07; line-height: 1;
+  }
+
+  .ol-status {
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--teal); text-transform: uppercase;
+    opacity: 0.65; margin-top: 2px;
+  }
+
+  /* ── Destination Panel (right-center) ── */
+  .dest-panel {
+    position: absolute;
+    right: 34px; top: 50%;
+    transform: translateY(-50%);
+    width: 315px;
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    animation: slide-from-right 0.85s cubic-bezier(0.4,0,0.2,1) 1.0s both;
+  }
+
+  @keyframes slide-from-right {
+    from { transform: translateY(-50%) translateX(44px); opacity: 0; }
+    to   { transform: translateY(-50%) translateX(0);    opacity: 1; }
+  }
+
+  .dp-header {
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--gold-dim);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .dp-header::before {
+    content: '◈';
+    color: var(--gold); font-size: 11px; opacity: 0.7; flex-shrink: 0;
+  }
+
+  .dp-line { flex: 1; height: 1px; background: var(--gold-dim); }
+
+  .dp-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8.5px; letter-spacing: 3px;
+    color: var(--gold); white-space: nowrap;
+  }
+
+  /* ── Destination Items ── */
+  .dest-list { padding: 2px 0; }
+
+  .dest-item {
+    display: flex; align-items: center; gap: 13px;
+    padding: 13px 18px;
+    border-bottom: 1px solid rgba(201,169,110,0.08);
+    position: relative; cursor: none;
+    transition: background 0.28s ease;
+    animation: item-fade 0.5s ease both;
+  }
+
+  .dest-item:last-child { border-bottom: none; }
+
+  .dest-item:nth-child(1) { animation-delay: 1.20s; }
+  .dest-item:nth-child(2) { animation-delay: 1.34s; }
+  .dest-item:nth-child(3) { animation-delay: 1.48s; }
+  .dest-item:nth-child(4) { animation-delay: 1.62s; }
+  .dest-item:nth-child(5) { animation-delay: 1.76s; }
+  .dest-item:nth-child(6) { animation-delay: 1.90s; }
+
+  @keyframes item-fade {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .dest-item::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--gold);
+    transform: scaleY(0);
+    transition: transform 0.22s ease;
+  }
+
+  .dest-item:hover { background: rgba(201,169,110,0.065); }
+  .dest-item:hover::before { transform: scaleY(1); }
+
+  /* Planet dot */
+  .dest-dot {
+    width: 30px; height: 30px;
+    border-radius: 50%; flex-shrink: 0;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .dest-item:hover .dest-dot { box-shadow: 0 0 14px currentColor; }
+
+  .dot-earth      { background: radial-gradient(circle at 35% 35%, #4db87a, #1b70b4); color: rgba(35,130,220,0.7); }
+  .dot-moon       { background: radial-gradient(circle at 35% 35%, #9eaabb, #4e5868); color: rgba(85,115,155,0.5); }
+  .dot-venus      { background: radial-gradient(circle at 35% 35%, #f2c265, #c26820); color: rgba(210,145,42,0.7); }
+  .dot-mars       { background: radial-gradient(circle at 35% 35%, #ce4636, #8c2012); color: rgba(200,68,38,0.7); }
+  .dot-reef       { background: radial-gradient(circle at 35% 35%, #7a52d5, #301aa4); color: rgba(90,52,205,0.7); }
+  .dot-classified { background: radial-gradient(circle at 35% 35%, #221530, #090507); border: 1px solid rgba(201,169,110,0.22); color: rgba(45,18,75,0.5); }
+
+  /* Item text */
+  .dest-info { flex: 1; min-width: 0; }
+
+  .dest-world {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12.5px; font-weight: 700;
+    letter-spacing: 2px; color: var(--white);
+    transition: color 0.25s;
+  }
+
+  .dest-item:hover .dest-world { color: var(--gold); }
+
+  .dest-loc {
+    font-size: 10.5px; letter-spacing: 0.8px;
+    color: var(--grey); margin-top: 2px;
+    transition: color 0.25s;
+  }
+
+  .dest-item:hover .dest-loc { color: rgba(201,169,110,0.65); }
+
+  .dest-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px; letter-spacing: 2px;
+    color: var(--grey); opacity: 0.55;
+    margin-top: 3px;
+  }
+
+  .dest-arrow {
+    font-size: 20px; color: var(--gold);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+
+  .dest-item:hover .dest-arrow { opacity: 0.85; transform: translateX(0); }
+
+  /* ── Bottom Bar ── */
+  .bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 14px 34px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(2,4,11,0.75);
+    border-top: 1px solid rgba(201,169,110,0.14);
+    animation: fade-slide-up 0.9s ease 1.4s both;
+  }
+
+  .nav-hints { display: flex; gap: 22px; }
+
+  .nav-hint {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; letter-spacing: 1.5px;
+    color: var(--grey); text-transform: uppercase;
+  }
+
+  .hint-key {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 7.5px; letter-spacing: 1px;
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+    padding: 3px 8px;
+  }
+
+  .status-msg {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px; letter-spacing: 3.5px;
+    color: var(--teal); text-transform: uppercase;
+    animation: blink-status 2.5s ease-in-out infinite;
+  }
+
+  @keyframes blink-status {
+    0%, 100% { opacity: 0.65; }
+    50%       { opacity: 0.35; }
+  }
+
+  /* ── Shared animation ── */
+  @keyframes fade-slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MODAL ── */
+  .modal {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(2,4,11,0.9);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.38s ease;
+  }
+
+  .modal.open {
+    opacity: 1; pointer-events: auto;
+  }
+
+  .modal-box {
+    width: 560px;
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    clip-path: polygon(18px 0%, 100% 0%, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0% 100%, 0% 18px);
+    transform: translateY(18px);
+    transition: transform 0.38s ease;
+  }
+
+  .modal.open .modal-box { transform: translateY(0); }
+
+  .modal-top-bar { height: 3px; background: var(--gold); transition: background 0.5s ease; }
+
+  .modal-head {
+    padding: 22px 26px 16px;
+    border-bottom: 1px solid var(--gold-dim);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+
+  .modal-world-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px; font-weight: 900;
+    letter-spacing: 4px; color: var(--white);
+  }
+
+  .modal-location {
+    font-size: 11px; letter-spacing: 3px;
+    color: var(--gold); margin-top: 5px;
+    text-transform: uppercase;
+  }
+
+  .modal-x {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px; color: var(--grey);
+    cursor: none; transition: color 0.2s;
+    margin-top: 2px; padding: 2px 4px;
+  }
+
+  .modal-x:hover { color: var(--white); }
+
+  .modal-body { padding: 22px 26px 18px; }
+
+  .modal-proj-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9.5px; letter-spacing: 4px;
+    color: var(--teal); margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .modal-desc {
+    font-size: 14px; line-height: 1.75;
+    color: var(--grey); letter-spacing: 0.4px;
+  }
+
+  .modal-divider {
+    height: 1px; margin: 18px 0;
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+
+  .modal-placeholder {
+    font-size: 12px; letter-spacing: 1px;
+    color: rgba(201,169,110,0.35);
+    font-style: italic;
+  }
+
+  .modal-foot {
+    padding: 14px 26px 22px;
+    border-top: 1px solid var(--gold-dim);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .modal-status {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--teal);
+  }
+
+  .modal-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px; letter-spacing: 3px;
+    color: var(--dark); background: var(--gold);
+    border: none; padding: 10px 22px;
+    cursor: none;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: background 0.2s, transform 0.15s;
+    text-transform: uppercase;
+  }
+
+  .modal-btn:hover { background: var(--gold-bright); transform: scale(1.04); }
+
+  /* ── CUSTOM CURSOR ── */
+  #cursor {
+    position: fixed; z-index: 200;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+    transition: left 0.04s linear, top 0.04s linear;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 820px) {
+    .planet-system { left: 50%; top: 28%; width: 260px; height: 260px; }
+    .guardian-ship { left: 135px; }
+    .dest-panel {
+      right: 10px; top: auto; bottom: 60px;
+      transform: none; width: calc(100% - 20px);
+      clip-path: none;
+    }
+    .orbit-label { display: none; }
+    .guardian-panel { width: 190px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<canvas id="stars"></canvas>
+<div class="nebula"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<!-- Planet System -->
+<div class="planet-system">
+  <div class="planet-atmos p-earth" id="planetAtmos"></div>
+  <div class="planet p-earth" id="planet">
+    <div class="planet-surface"></div>
+  </div>
+  <div class="orbit-ring"></div>
+  <div class="ship-wrapper">
+    <div class="guardian-ship">
+      <!-- Guardian-class ship silhouette -->
+      <svg width="36" height="16" viewBox="0 0 36 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 8 L7 3.5 L14 3 L30 3 L35 8 L30 13 L14 13 L7 12.5 Z"
+          fill="rgba(201,169,110,0.55)" stroke="rgba(201,169,110,0.8)" stroke-width="0.6"/>
+        <path d="M11 3 L13 1 L22 1 L24 3" stroke="rgba(201,169,110,0.38)" stroke-width="0.6" fill="rgba(201,169,110,0.1)"/>
+        <path d="M11 13 L13 15 L22 15 L24 13" stroke="rgba(201,169,110,0.38)" stroke-width="0.6" fill="rgba(201,169,110,0.1)"/>
+        <line x1="18" y1="8" x2="35" y2="8" stroke="rgba(91,200,216,0.45)" stroke-width="0.6"/>
+        <circle cx="10" cy="8" r="1.2" fill="rgba(91,200,216,0.7)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- UI Overlay -->
+<div class="ui">
+
+  <!-- Guardian Panel -->
+  <div class="guardian-panel">
+    <div class="gp-eyebrow">◈ Guardian</div>
+    <div class="gp-name">YOUR NAME</div>
+    <div class="gp-row">
+      <span>ENGINEER</span>
+      <span class="gp-sep">|</span>
+      <span class="gp-light">♦ PORTFOLIO</span>
+    </div>
+    <div class="gp-scan"></div>
+  </div>
+
+  <!-- Orbit Label -->
+  <div class="orbit-label">
+    <div class="ol-word">ORBIT</div>
+    <div class="ol-status">▲ STABLE TRAJECTORY</div>
+  </div>
+
+  <!-- Destination Panel -->
+  <div class="dest-panel">
+    <div class="dp-header">
+      <div class="dp-line"></div>
+      <span class="dp-title">SET DESTINATION</span>
+      <div class="dp-line"></div>
+    </div>
+    <div class="dest-list" id="destList"></div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="nav-hints">
+      <div class="nav-hint"><span class="hint-key">HOVER</span> Preview</div>
+      <div class="nav-hint"><span class="hint-key">CLICK</span> Explore</div>
+      <div class="nav-hint"><span class="hint-key">ESC</span> Close</div>
+    </div>
+    <div class="status-msg" id="statusMsg">SELECT A DESTINATION</div>
+  </div>
+</div>
+
+<!-- Custom Cursor (Destiny diamond reticle) -->
+<div id="cursor">
+  <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 3 L19 15 L15 27 L11 15 Z"
+      stroke="rgba(201,169,110,0.85)" stroke-width="1"
+      fill="rgba(201,169,110,0.08)"/>
+    <line x1="1"  y1="15" x2="9"  y2="15" stroke="rgba(201,169,110,0.65)" stroke-width="1"/>
+    <line x1="21" y1="15" x2="29" y2="15" stroke="rgba(201,169,110,0.65)" stroke-width="1"/>
+    <circle cx="15" cy="15" r="1.8" fill="rgba(91,200,216,0.95)"/>
+    <circle cx="15" cy="15" r="3.5" stroke="rgba(91,200,216,0.25)" stroke-width="0.8" fill="none"/>
+  </svg>
+</div>
+
+<!-- Project Modal -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-top-bar" id="modalBar"></div>
+    <div class="modal-head">
+      <div>
+        <div class="modal-world-name" id="modalWorld">EARTH</div>
+        <div class="modal-location" id="modalLoc">The Cosmodrome</div>
+      </div>
+      <div class="modal-x" id="modalClose">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-proj-label" id="modalProj">PROJECT 01</div>
+      <div class="modal-desc" id="modalDesc">Project details will appear here.</div>
+      <div class="modal-divider"></div>
+      <div class="modal-placeholder">Add your project details, links, and screenshots here.</div>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-status" id="modalStatus">● ACTIVE</div>
+      <button class="modal-btn">LAUNCH MISSION</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DESTINATION DATA ───
+const DEST = [
+  {
+    id: 'earth', world: 'EARTH', loc: 'The Cosmodrome',
+    proj: 'PROJECT 01', tag: '— AVAILABLE —',
+    desc: 'Project details coming soon. Drop in your description, screenshots, and links here.',
+    status: '● ACTIVE', statusColor: '#5bc8d8',
+    dotClass: 'dot-earth', pClass: 'p-earth', barColor: '#1b70b4'
+  },
+  {
+    id: 'moon', world: 'MOON', loc: 'Sea of Tears',
+    proj: 'PROJECT 02', tag: '— AVAILABLE —',
+    desc: 'Project details coming soon. Drop in your description, screenshots, and links here.',
+    status: '● ACTIVE', statusColor: '#5bc8d8',
+    dotClass: 'dot-moon', pClass: 'p-moon', barColor: '#5e6878'
+  },
+  {
+    id: 'venus', world: 'VENUS', loc: 'Ishtar Sink',
+    proj: 'PROJECT 03', tag: '— AVAILABLE —',
+    desc: 'Project details coming soon. Drop in your description, screenshots, and links here.',
+    status: '● ACTIVE', statusColor: '#5bc8d8',
+    dotClass: 'dot-venus', pClass: 'p-venus', barColor: '#c26820'
+  },
+  {
+    id: 'mars', world: 'MARS', loc: 'Meridian Bay',
+    proj: 'PROJECT 04', tag: '— AVAILABLE —',
+    desc: 'Project details coming soon. Drop in your description, screenshots, and links here.',
+    status: '● ACTIVE', statusColor: '#5bc8d8',
+    dotClass: 'dot-mars', pClass: 'p-mars', barColor: '#8c2012'
+  },
+  {
+    id: 'reef', world: 'THE REEF', loc: 'Vestian Outpost',
+    proj: 'PROJECT 05', tag: '— LOCKED —',
+    desc: 'Access temporarily restricted. Guardian clearance required.',
+    status: '◆ LOCKED', statusColor: '#c9a96e',
+    dotClass: 'dot-reef', pClass: 'p-reef', barColor: '#301aa4'
+  },
+  {
+    id: 'classified', world: '[CLASSIFIED]', loc: '???',
+    proj: 'COMING SOON', tag: '— REDACTED —',
+    desc: 'This location is classified. Information has been restricted by Vanguard Command.',
+    status: '▪ REDACTED', statusColor: 'rgba(201,169,110,0.5)',
+    dotClass: 'dot-classified', pClass: 'p-classified', barColor: '#221530'
+  }
+];
+
+// ─── STATE ───
+let isModalOpen = false;
+let hoverTimer = null;
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+  initStarfield();
+  renderDest();
+  setPlanet(0);
+  document.addEventListener('mousemove', trackCursor);
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal')) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+});
+
+// ─── STARFIELD ───
+function initStarfield() {
+  const cvs = document.getElementById('stars');
+  const ctx = cvs.getContext('2d');
+  cvs.width  = window.innerWidth;
+  cvs.height = window.innerHeight;
+
+  const stars = Array.from({ length: 320 }, () => ({
+    x:  Math.random() * cvs.width,
+    y:  Math.random() * cvs.height,
+    r:  Math.random() * 1.4 + 0.2,
+    a:  Math.random(),
+    da: (Math.random() * 0.006 + 0.001) * (Math.random() < 0.5 ? 1 : -1)
+  }));
+
+  // A handful of "bright" stars
+  for (let i = 0; i < 18; i++) {
+    stars[i].r  = Math.random() * 2.2 + 1.2;
+    stars[i].da = (Math.random() * 0.003 + 0.0005) * (Math.random() < 0.5 ? 1 : -1);
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    for (const s of stars) {
+      s.a += s.da;
+      if (s.a >= 1 || s.a <= 0.08) s.da *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,210,235,${s.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  window.addEventListener('resize', () => {
+    cvs.width  = window.innerWidth;
+    cvs.height = window.innerHeight;
+  });
+}
+
+// ─── RENDER DESTINATIONS ───
+function renderDest() {
+  document.getElementById('destList').innerHTML = DEST.map((d, i) => `
+    <div class="dest-item"
+      onmouseenter="hoverPlanet(${i})"
+      onmouseleave="clearHover()"
+      onclick="openModal(${i})">
+      <div class="dest-dot ${d.dotClass}"></div>
+      <div class="dest-info">
+        <div class="dest-world">${d.world}</div>
+        <div class="dest-loc">${d.loc}</div>
+        <div class="dest-tag">${d.tag}</div>
+      </div>
+      <div class="dest-arrow">›</div>
+    </div>
+  `).join('');
+}
+
+// ─── PLANET MORPH ───
+function setPlanet(idx) {
+  const d = DEST[idx];
+  document.getElementById('planet').className      = `planet ${d.pClass}`;
+  document.getElementById('planetAtmos').className = `planet-atmos ${d.pClass}`;
+}
+
+function hoverPlanet(idx) {
+  if (hoverTimer) clearTimeout(hoverTimer);
+  setPlanet(idx);
+  document.getElementById('statusMsg').textContent =
+    DEST[idx].world + '  —  ' + DEST[idx].loc;
+}
+
+function clearHover() {
+  hoverTimer = setTimeout(() => {
+    document.getElementById('statusMsg').textContent = 'SELECT A DESTINATION';
+  }, 180);
+}
+
+// ─── MODAL ───
+function openModal(idx) {
+  const d = DEST[idx];
+  setPlanet(idx);
+  document.getElementById('modalWorld').textContent  = d.world;
+  document.getElementById('modalLoc').textContent    = d.loc;
+  document.getElementById('modalProj').textContent   = d.proj;
+  document.getElementById('modalDesc').textContent   = d.desc;
+  document.getElementById('modalStatus').textContent = d.status;
+  document.getElementById('modalStatus').style.color = d.statusColor;
+  document.getElementById('modalBar').style.background = d.barColor;
+  document.getElementById('modal').classList.add('open');
+  isModalOpen = true;
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  isModalOpen = false;
+}
+
+// ─── CURSOR ───
+function trackCursor(e) {
+  const c = document.getElementById('cursor');
+  c.style.left = e.clientX + 'px';
+  c.style.top  = e.clientY + 'px';
+}
+</script>
+</body>
+</html>
